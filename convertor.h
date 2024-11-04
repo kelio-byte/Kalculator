@@ -22,10 +22,13 @@ private:
     string postfix;
     double eventual_value;
 public:
-    explicit convertor(string string1);
+    convertor(string string1);
     string GetInfix();
     string GetPostfix();
     double GetEventual_value();
+    void SetInfix(string tem_str);
+    void SetPostfix(string tem_str);
+    void SetEventual_value(double tem_value);
     bool isNumber(char ch);
     bool isOperator(char ch);
     void data_cleaning();  //用户输入的字符串还会有自己的变量，而且也涉及函数，需要先清洗

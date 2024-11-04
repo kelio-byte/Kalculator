@@ -5,9 +5,9 @@
 
 #include "convertor.h"
 
-convertor::convertor(string string1) {
-    this->ori = string1;
-}
+#include <utility>
+
+convertor::convertor(string string1) : ori(std::move(string1)), infix(string1), postfix(string1), eventual_value(0) {}
 
 string convertor::GetInfix() {
     return infix;
@@ -30,10 +30,7 @@ int convertor::priority(char op) const {
 }
 
 bool convertor::isNumber(char ch) {
-    if(ch >=48 && ch <= 57){
-        return true;
-    }
-    return false;
+    return isdigit(ch) || ch == '.';
 }
 
 bool convertor::isOperator(char ch) {
@@ -50,14 +47,14 @@ void convertor::data_cleaning() {
     result.erase(remove_if(result.begin(),result.end(), ::isspace),result.end());
     //然后使用正则表达式把函数式变成对应的值
     regex sin1_pattern(R"(\bsin\(([-+]?\d*\.?\d*)\))"); //这个用来匹配sin(x)
-    regex sin2_pattern(R"(\bsin\(π/([-+]?\d*\.?\d*)\))");   //这个用来匹配sin(π/x)
+    regex sin2_pattern(R"(\bsin\(pi/([-+]?\d*\.?\d*)\))");   //这个用来匹配sin(π/x)
     regex cos1_pattern(R"(\bcos\(([-+]?\d*\.?\d*)\))"); //这个用来匹配cos(x)
-    regex cos2_pattern(R"(\bcos\(π/([-+]?\d*\.?\d*)\))");   //这个用来匹配cos(π/x)
+    regex cos2_pattern(R"(\bcos\(pi/([-+]?\d*\.?\d*)\))");   //这个用来匹配cos(π/x)
     regex tan1_pattern(R"(\btan\(([-+]?\d*\.?\d*)\))"); //这个用来匹配tan(x)
-    regex tan2_pattern(R"(\btan\(π/([-+]?\d*\.?\d*)\))");   //这个用来匹配tan(π/x)
+    regex tan2_pattern(R"(\btan\(pi/([-+]?\d*\.?\d*)\))");   //这个用来匹配tan(π/x)
     regex pow_pattern(R"(\bpow\(([-+]?\d*\.?\d*),([-+]?\d*\.?\d*)\))"); //这个用来匹配pow(x,y)
     regex log1_pattern(R"(\blog\(([-+]?\d*\.?\d*)\))"); //这个用来匹配ln(x)
-    regex log2_pattern(R"(\blog\(([-+]?\d*\.?\d*),([-+]?\d*\.?\d*)\))");    //这个用来匹配logx(y)
+    regex log2_pattern(R"(\blog\(([-+]?\d*\.?\d*),([-+]?\d*\.?\d*)\))");    //这个用来匹配log(x,y)
     regex var_pattern(R"(\b([a-zA-Z]+)\b)"); //这个用来匹配变量名
 
     auto replace_matches = [](const std::string& expr, const std::regex& pattern, auto func) {
@@ -98,6 +95,7 @@ void convertor::data_cleaning() {
         stream << std::fixed << std::setprecision(2) << value;
         return stream.str();
     });
+
     result = replace_matches(result, cos2_pattern, [](const std::smatch& match) -> std::string{
         //这里默认分子是π
         double fenmu = std::stod(match[1].str());
@@ -123,7 +121,10 @@ void convertor::data_cleaning() {
     });
     result = replace_matches(result, log1_pattern, [](const std::smatch& match) -> std::string{
         double tem_value = std::stod(match[1].str());
-        return std::to_string(log(tem_value));
+        double value = log(tem_value);
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(2) << value;
+        return stream.str();
     });
     result = replace_matches(result, log2_pattern, [](const std::smatch& match) -> std::string{
         double base = stod(match[1].str());
@@ -134,7 +135,7 @@ void convertor::data_cleaning() {
         return stream.str();
     });
     result = replace_matches(result, pow_pattern, [](const std::smatch& match) -> std::string{
-        double base = stod(match[1].str());
+        double base = std::stod(match[1].str());
         double exponent = std::stod(match[2].str());
         double value = pow(base, exponent);
         std::ostringstream stream;
@@ -150,13 +151,15 @@ void convertor::data_cleaning() {
         return stream.str();
     });
 
-    infix = result;
+    this->SetInfix(result);
 }
 
 void convertor::infix_to_postfix() {
-    string tem = infix; //这个是数据清洗之后的中缀表达式
+    string tem = this->GetInfix(); //这个是数据清洗之后的中缀表达式
+    //先把空格去掉
+    tem.erase(remove_if(tem.begin(),tem.end(), ::isspace),tem.end());
     string tem_result;  //这个暂存得到的后缀表达式
-    stack<double> saved_operator;   //这个暂存运算符
+    stack<char> saved_operator;   //这个暂存运算符
     int i = 0;
     while(i != tem.length()){
         if(tem[i] == '('){
@@ -169,15 +172,12 @@ void convertor::infix_to_postfix() {
             }
             saved_operator.pop();   //弹出'('
         }else if(isOperator(tem[i])){
-            if(isOperator(saved_operator.top()) && priority(saved_operator.top()) > priority(tem[i])){
-                //如果栈顶是运算符而且优先级更高的话，那就出栈，tem[i]入栈
+            while (!saved_operator.empty() && isOperator(saved_operator.top()) && (priority(saved_operator.top()) >= priority(tem[i]))) {
                 tem_result += saved_operator.top();
                 tem_result += ' ';
                 saved_operator.pop();
-                saved_operator.push(tem[i]);
-            }else{
-                saved_operator.push(tem[i]);
             }
+            saved_operator.push(tem[i]);
         }else{
             tem_result += tem[i];
             if(i != tem.length()){
@@ -200,11 +200,12 @@ void convertor::infix_to_postfix() {
         saved_operator.pop();
     }
 
-    postfix = tem_result;
+
+    this->SetPostfix(tem_result);
 }
 
 void convertor::postfix_to_value() {
-    string tem = postfix;   //这个是后缀表达式
+    string tem = this->GetPostfix();   //这个是后缀表达式
     stack<double> opnd; //这个用来存放操作数
 
     int i = 0;
@@ -241,6 +242,18 @@ void convertor::postfix_to_value() {
         i++;
     }
 
-    eventual_value = opnd.top();
+    this->SetEventual_value(opnd.top());
     opnd.pop();
+}
+
+void convertor::SetInfix(string tem_str) {
+    this->infix = std::move(tem_str);
+}
+
+void convertor::SetPostfix(string tem_str) {
+    this->postfix = std::move(tem_str);
+}
+
+void convertor::SetEventual_value(double tem_value) {
+    this->eventual_value = tem_value;
 }
