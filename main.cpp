@@ -7,12 +7,14 @@
 using namespace std;
 
 int main() {
-    convertor test("(1+2)*((  8/2-1)/(7-4.54))");
+    string input;
+    getline(cin,input);
+    convertor test(input);
     test.data_cleaning();
-    cout<<"after data-cleaning:"<<test.GetInfix()<<endl;
+    cout<<"after data-cleaning:\t"<<test.GetInfix()<<endl;
     test.infix_to_postfix();
-    cout<<"infix to postfix:"<<test.GetPostfix()<<endl;
+    cout<<"infix to postfix:\t"<<test.GetPostfix()<<endl;
     test.postfix_to_value();
-    cout<<"postfix to eventual value:"<<test.GetEventual_value()<<endl;
+    cout<<"postfix to eventual value:\t"<<test.GetEventual_value()<<endl;
     return 0;
 }
