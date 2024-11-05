@@ -6,6 +6,10 @@
 #include "convertor.h"
 using namespace std;
 
+void systemPause(){
+    std::cout<<"Press any key to continue..."<< std::endl;
+    std::cin.get();// 等待用户按下任意键
+}
 int main() {
     string input;
     string input1 = "1.00+0.71+0.58+0.69+1.58+8.00";
@@ -35,5 +39,6 @@ int main() {
         getchar();
     }
 
+    systemPause();
     return 0;
 }
