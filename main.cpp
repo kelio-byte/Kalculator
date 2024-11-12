@@ -26,6 +26,12 @@ int main() {
 
         convertor *test1 = new convertor(input);
         test1->data_cleaning();
+        if(test1->GetTag() == 0){
+            cout<<"keep on? y/n?"<<endl;
+            cin>>button;
+            getchar();
+            continue;
+        }
         cout<<"after data-cleaning---------"<<test1->GetInfix()<<endl;
         test1->infix_to_postfix();
         cout<<"infix to postfix------------"<<test1->GetPostfix()<<endl;

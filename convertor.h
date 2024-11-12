@@ -21,11 +21,13 @@ private:
     string infix;
     string postfix;
     double eventual_value;
+    int tag = 1;
 public:
     convertor(string string1);
     string GetInfix();
     string GetPostfix();
     double GetEventual_value();
+    int GetTag();
     void SetInfix(string tem_str);
     void SetPostfix(string tem_str);
     void SetEventual_value(double tem_value);

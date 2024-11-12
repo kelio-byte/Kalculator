@@ -95,7 +95,6 @@ void convertor::data_cleaning() {
         stream << std::fixed << std::setprecision(2) << value;
         return stream.str();
     });
-
     result = replace_matches(result, cos2_pattern, [](const std::smatch& match) -> std::string{
         //这里默认分子是π
         double fenmu = std::stod(match[1].str());
@@ -143,13 +142,25 @@ void convertor::data_cleaning() {
         return stream.str();
     });
     result = replace_matches(result, var_pattern, [](const std::smatch& match) -> std::string{
-        cout<<'"'<<match[1].str()<<'"'<<" semms to be a variable, can you give me its value ?\n";
+        cout<<'"'<<match[1].str()<<'"'<<" seems to be a variable, can you give me its value ?\n";
         double value = 0;
         cin>>value;
         std::ostringstream stream;
         stream << std::fixed << std::setprecision(2) << value;
         return stream.str();
     });
+
+    if(result[0] == '+' || result[0] == '-'){
+        result.insert(result.begin(),'0');
+    }
+    if(result[0] == '*'){
+        cout<<"You seem to be missing a '1'"<<endl;
+        result.insert(result.begin(),'1');
+    }
+    if(result[0] == '/'){
+        cout<<"start with a '/'?, you must be crazy !"<<endl;
+        this->tag = 0;
+    }
 
     this->SetInfix(result);
 }
@@ -189,7 +200,12 @@ void convertor::infix_to_postfix() {
                         tem_result += tem[i];
                     }
                 }
+                while(isNumber(tem[i+1])){
+                    i++;
+                    tem_result += tem[i];
+                }
             }
+
             tem_result += ' ';
         }
         i++;
@@ -199,7 +215,6 @@ void convertor::infix_to_postfix() {
         tem_result += ' ';
         saved_operator.pop();
     }
-
 
     this->SetPostfix(tem_result);
 }
@@ -221,6 +236,10 @@ void convertor::postfix_to_value() {
                         i++;
                         tem_string += tem[i];
                     }
+                }
+                while(isNumber(tem[i+1])){
+                    i++;
+                    tem_string += tem[i];
                 }
             }
             opnd.push(stod(tem_string));    //有可能有小数
@@ -256,4 +275,8 @@ void convertor::SetPostfix(string tem_str) {
 
 void convertor::SetEventual_value(double tem_value) {
     this->eventual_value = tem_value;
+}
+
+int convertor::GetTag() {
+    return this->tag;
 }
